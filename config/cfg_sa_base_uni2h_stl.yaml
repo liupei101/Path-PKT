@@ -1,0 +1,80 @@
+task: sa
+cuda_id: 0
+seed: 42
+
+wandb_dir: /path/to/repo
+wandb_prj: project
+save_path: ./result/project/abmil_gat_attn-MLE_YEAR
+save_prediction: True
+eval_training_loader_per_epoch: False
+ckpt_for_eval: last # last / best
+
+# data loading
+dataset_name: ['tcga_brca']
+path_patch: /path/to/data/TCGA-{project}
+path_coord: null
+path_table: ./data_split/stratified-5foldcv/{dataset}/{dataset}_survival.csv
+data_mode: patch
+path_cluster: null
+feat_format: pt
+time_format: interval # 'origin', 'ratio', 'quantile', 'interval'
+time_bins: 32 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
+time_event_max: 11680 # Keep it the same for all MTL & STL experiments; lead to uniform cutoffs like [0, 365*1, ..., 365*32]
+data_split_path: ./data_split/stratified-5foldcv/{dataset}/splits_{fold}.csv
+data_split_fold: [0, 1, 2, 3, 4]
+
+# network architecture
+arch: DeepMIL # DeepMIL
+init_wt: False
+net_output_converter: sigmoid # use to convert prediction
+
+# DeepMIL setttings
+deepmil_network: ABMIL
+deepmil_dim_in: 1536 # UNI2h = 1536 / UNI = 768
+deepmil_dim_emb: 512
+deepmil_num_cls: 32 # should be equal to `time_bins`
+deepmil_dim_attn: 384
+deepmil_num_feat_proj_layers: 0
+deepmil_drop_rate: 0.25
+deepmil_pooling: gated_attention # only for DeepMIL, max / mean / attention / gated_attention
+
+# training loss
+loss_type: SurvMLE # use XXX-XXX-XXX to configure multi-loss
+loss_survmle_weight: 1.0
+loss_survmle_alpha: 0.5
+
+# evaluator
+evaluator: NLL # Reg / NLL / Cox / VL
+evaluator_backend: default
+
+# optimizer
+opt_name: adamW
+opt_lr: 0.0001
+opt_weight_decay: 0.00001
+
+# training
+epochs: 20
+batch_size: 1
+bp_every_batch: 16 # 16 by default
+num_workers: 4
+
+# LR Scheduler
+lrs: True
+lrs_name: cosine
+lrs_warmup_steps: -1
+lrs_warmup_epochs: 1
+
+# Early Stopping
+es: False
+es_patience: 20
+es_warmup: 0
+es_verbose: True
+es_start_epoch: 0
+monitor_metrics: loss # loss / c_index
+
+# In a test mode
+test: False
+test_wandb_prj: null # wandb project name of test mode
+test_split: test # dataset name you want to test, which should be a key in the npz file for data split
+test_load_path: null # path to load trained models
+test_save_path: null # path to save test results
